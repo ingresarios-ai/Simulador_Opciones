@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OptionLab · INGRESARIOS — Constructor de estrategias de opciones</title>
+  <meta name="description" content="Simulador educativo de estrategias de opciones estilo INGRESARIOS: gráfico de P/L, Greeks, probabilidad de ganancia y marco PEDEM.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2300D2FF'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='800' font-size='15' text-anchor='middle' fill='%23080B10'%3EIN%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="blueprint-bg" aria-hidden="true"></div>
+
+  <!-- ================= HEADER ================= -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">IN</div>
+      <div class="brand-text">
+        <div class="brand-name">INGRESARIOS <span>· OptionLab</span></div>
+        <div class="brand-tag">Constructor de estrategias · Honrar el proceso</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <label class="toggle" title="Muestra explicaciones y el marco PEDEM">
+        <input type="checkbox" id="learnMode" checked>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span class="toggle-label">Modo Aprende</span>
+      </label>
+      <button class="btn ghost" id="btnShare" title="Copiar enlace con esta estrategia">⧉ Compartir</button>
+      <button class="btn ghost" id="btnSave" title="Guardar en este navegador">💾 Guardar</button>
+      <button class="btn ghost" id="btnReset" title="Volver a la plantilla">↺ Reset</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar">
+      <section class="panel">
+        <h2 class="panel-title">01 · Mercado</h2>
+        <div class="field-grid">
+          <label class="field"><span>Subyacente</span><input id="ticker" type="text" value="SPY" maxlength="8"></label>
+          <label class="field"><span>Precio spot</span><input id="spot" type="number" step="0.5" value="500"></label>
+          <label class="field"><span>IV base % <i class="hint" data-tip="iv">?</i></span><input id="iv" type="number" step="1" value="20"></label>
+          <label class="field"><span>DTE base <i class="hint" data-tip="dte">?</i></span><input id="dte" type="number" step="1" value="30"></label>
+          <label class="field"><span>Tasa r %</span><input id="rate" type="number" step="0.25" value="4.5"></label>
+          <label class="field"><span>Paso strike</span><input id="step" type="number" step="0.5" value="5"></label>
+        </div>
+        <div class="em-box" id="emBox"></div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">02 · Estrategias</h2>
+        <div class="strategy-filter" id="strategyFilter"></div>
+        <div class="strategy-list" id="strategyList"></div>
+      </section>
+
+      <section class="panel" id="savedPanel">
+        <h2 class="panel-title">03 · Guardadas</h2>
+        <div class="saved-list" id="savedList"><div class="muted">Aún no has guardado estrategias.</div></div>
+      </section>
+    </aside>
+
+    <!-- ================= MAIN ================= -->
+    <section class="content">
+      <!-- Título de estrategia -->
+      <div class="strategy-header">
+        <div>
+          <div class="eyebrow" id="strategyGroup">Neutral · Lateral</div>
+          <h1 id="strategyName">Iron Condor</h1>
+        </div>
+        <div class="badges" id="strategyBadges"></div>
+      </div>
+
+      <!-- Métricas -->
+      <div class="stats" id="stats"></div>
+
+      <!-- Gráfico -->
+      <section class="panel chart-panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Gráfico de P/L</h2>
+          <div class="legend" id="legend"></div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="plChart"></canvas>
+          <div class="chart-tooltip" id="chartTooltip"></div>
+        </div>
+      </section>
+
+      <!-- Simulador -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Simulador · ¿Qué pasa si…?</h2>
+          <div class="sim-readout" id="simReadout"></div>
+        </div>
+        <div class="sliders">
+          <label class="slider">
+            <span>Precio del subyacente <b id="simPriceLbl"></b></span>
+            <input type="range" id="simPrice" min="-30" max="30" step="0.5" value="0">
+          </label>
+          <label class="slider">
+            <span>Días transcurridos <b id="simDaysLbl"></b></span>
+            <input type="range" id="simDays" min="0" max="30" step="1" value="0">
+          </label>
+          <label class="slider">
+            <span>Cambio de IV <b id="simIvLbl"></b></span>
+            <input type="range" id="simIv" min="-20" max="20" step="0.5" value="0">
+          </label>
+        </div>
+      </section>
+
+      <!-- Patas -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Patas de la estrategia</h2>
+          <button class="btn small" id="btnAddLeg">+ Añadir pata</button>
+        </div>
+        <div class="table-wrap">
+          <table class="legs" id="legsTable">
+            <thead>
+              <tr>
+                <th>Lado</th><th>Tipo</th><th>Strike</th><th>Cant.</th><th>DTE</th><th>IV %</th><th>Prima</th>
+                <th>Δ <i class="hint" data-tip="delta">?</i></th><th>Θ/día <i class="hint" data-tip="theta">?</i></th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="muted small-note">La prima se calcula con Black-Scholes a partir de la IV; puedes sobrescribirla con el precio real de tu bróker.</div>
+      </section>
+
+      <div class="two-col">
+        <!-- Greeks -->
+        <section class="panel">
+          <h2 class="panel-title">Greeks netos (posición)</h2>
+          <div class="greeks" id="greeks"></div>
+        </section>
+
+        <!-- Aprende -->
+        <section class="panel learn" id="learnPanel">
+          <h2 class="panel-title">Modo Aprende · PEDEM</h2>
+          <div id="learnContent"></div>
+        </section>
+      </div>
+
+      <!-- Mapa de calor -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Mapa de calor · P/L por precio y fecha</h2>
+          <div class="muted">Verde = ganancia · Rojo = pérdida · Usa la IV del simulador</div>
+        </div>
+        <div class="table-wrap">
+          <table class="heatmap" id="heatmap"></table>
+        </div>
+      </section>
+
+      <footer class="foot">
+        <div>OptionLab es una herramienta <b>educativa</b> de INGRESARIOS. Los valores son teóricos (Black-Scholes) y no constituyen asesoría financiera. Planear → Ejecutar → Documentar → Evaluar → Mejorar.</div>
+      </footer>
+    </section>
+  </main>
+
+  <div class="tip" id="tip"></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="js/pricing.js"></script>
+  <script src="js/strategies.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
